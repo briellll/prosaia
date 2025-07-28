@@ -25,7 +25,9 @@ async def endpoint_websocket(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            response = model.generate_content(data)
-            await websocket.send_text(response.text)
+            response_stream = model.generate_content(data, stream=True)
+            for chunk in response_stream:
+                if chunk.text:
+                    await websocket.send_text(chunk.text)
     except Exception as erro:
         print(f'Erro no websocket: {erro}')

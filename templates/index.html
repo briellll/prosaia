@@ -1,32 +1,76 @@
-
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Prosa.ia</title>
-    </head>
-    <body>
-        <h1>Chat em Tempo Real</h1>
-        <form action="" onsubmit="sendMessage(event)">
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button>Enviar</button>
-        </form>
-        <ul id='messages'>
-        </ul>
-        <script>
-            var ws = new WebSocket("ws://localhost:8000/ws");
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
-            function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(input.value)
-                input.value = ''
-                event.preventDefault()
+<head>
+    <title>Prosa.IA</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: auto; max-width: 600px; padding: 20px; background-color: #f4f4f9; }
+        #messages { list-style-type: none; padding: 0; }
+        #messages li { padding: 10px; margin-bottom: 10px; border-radius: 10px; line-height: 1.4; }
+        .user-message { background-color: #007bff; color: white; text-align: right; margin-left: 50px; }
+        .ai-message { background-color: #e9ecef; color: #333; margin-right: 50px; }
+        #form { display: flex; margin-top: 20px; }
+        #messageText { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; border: none; background-color: #007bff; color: white; border-radius: 5px; margin-left: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Prosa.IA 🤖</h1>
+    <ul id='messages'></ul>
+    <form id="form" action="" onsubmit="sendMessage(event)">
+        <input type="text" id="messageText" autocomplete="off" placeholder="Digite sua mensagem..."/>
+        <button>Enviar</button>
+    </form>
+
+    <script>
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        const messages = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const input = document.getElementById('messageText');
+
+        let currentAiMessageElement = null; // Variável para guardar a "bolha" da IA que está sendo preenchida
+
+        // O que acontece quando o WebSocket recebe uma mensagem do servidor
+        ws.onmessage = function(event) {
+            // Se não temos uma "bolha" de IA ativa, criamos uma nova.
+            if (!currentAiMessageElement) {
+                const aiListItem = document.createElement('li');
+                aiListItem.className = 'ai-message';
+                messages.appendChild(aiListItem);
+                currentAiMessageElement = aiListItem; // Guardamos a referência dela
             }
-        </script>
-    </body>
+
+            // Adicionamos o pedacinho de texto que chegou à "bolha" da IA.
+            // Usamos += para concatenar o texto novo ao que já existe.
+            currentAiMessageElement.innerHTML += event.data;
+
+            // Rola a página para baixo para vermos a nova mensagem
+            window.scrollTo(0, document.body.scrollHeight);
+        };
+
+        // O que acontece quando o usuário envia uma mensagem
+        function sendMessage(event) {
+            event.preventDefault(); // Impede o recarregamento da página
+
+            const messageText = input.value;
+            if (messageText.trim() === "") return; // Não envia mensagens vazias
+
+            // 1. Cria e exibe a mensagem do usuário imediatamente
+            const userListItem = document.createElement('li');
+            userListItem.textContent = messageText;
+            userListItem.className = 'user-message';
+            messages.appendChild(userListItem);
+
+            // 2. Envia a mensagem do usuário para o backend via WebSocket
+            ws.send(messageText);
+
+            // 3. Reseta a "bolha" da IA. A próxima mensagem que chegar do servidor
+            //    iniciará uma nova "bolha".
+            currentAiMessageElement = null;
+
+            // 4. Limpa o campo de input
+            input.value = '';
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    </script>
+</body>
 </html>
