@@ -1,76 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Prosa.IA</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: auto; max-width: 600px; padding: 20px; background-color: #f4f4f9; }
-        #messages { list-style-type: none; padding: 0; }
-        #messages li { padding: 10px; margin-bottom: 10px; border-radius: 10px; line-height: 1.4; }
-        .user-message { background-color: #007bff; color: white; text-align: right; margin-left: 50px; }
-        .ai-message { background-color: #e9ecef; color: #333; margin-right: 50px; }
-        #form { display: flex; margin-top: 20px; }
-        #messageText { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 15px; border: none; background-color: #007bff; color: white; border-radius: 5px; margin-left: 10px; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prosa.IA</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header span {
+      font-size: 1.5rem;
+    }
+
+    #messages {
+      list-style-type: none;
+      padding: 15px;
+      margin: 0;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #messages li {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.4;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .user-message {
+      background-color: #007bff;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai-message {
+      background-color: white;
+      color: #333;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    #form {
+      display: flex;
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #ddd;
+    }
+
+    #messageText {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      outline: none;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 20px;
+      margin-left: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-    <h1>Prosa.IA 🤖</h1>
-    <ul id='messages'></ul>
-    <form id="form" action="" onsubmit="sendMessage(event)">
-        <input type="text" id="messageText" autocomplete="off" placeholder="Digite sua mensagem..."/>
-        <button>Enviar</button>
-    </form>
+  <header>🤖 Prosa.IA</header>
+  <ul id="messages"></ul>
 
-    <script>
-        const ws = new WebSocket(`ws://${window.location.host}/ws`);
-        const messages = document.getElementById('messages');
-        const form = document.getElementById('form');
-        const input = document.getElementById('messageText');
+  <form id="form" onsubmit="sendMessage(event)">
+    <input type="text" id="messageText" autocomplete="off" placeholder="Digite sua mensagem..." />
+    <button>Enviar</button>
+  </form>
 
-        let currentAiMessageElement = null; // Variável para guardar a "bolha" da IA que está sendo preenchida
+  <script>
+    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('messageText');
+    let currentAiMessageElement = null;
 
-        // O que acontece quando o WebSocket recebe uma mensagem do servidor
-        ws.onmessage = function(event) {
-            // Se não temos uma "bolha" de IA ativa, criamos uma nova.
-            if (!currentAiMessageElement) {
-                const aiListItem = document.createElement('li');
-                aiListItem.className = 'ai-message';
-                messages.appendChild(aiListItem);
-                currentAiMessageElement = aiListItem; // Guardamos a referência dela
-            }
+    ws.onmessage = function(event) {
+      if (!currentAiMessageElement) {
+        const aiListItem = document.createElement('li');
+        aiListItem.className = 'ai-message';
+        messages.appendChild(aiListItem);
+        currentAiMessageElement = aiListItem;
+      }
+      currentAiMessageElement.innerHTML += event.data;
+      messages.scrollTop = messages.scrollHeight;
+    };
 
-            // Adicionamos o pedacinho de texto que chegou à "bolha" da IA.
-            // Usamos += para concatenar o texto novo ao que já existe.
-            currentAiMessageElement.innerHTML += event.data;
+    function sendMessage(event) {
+      event.preventDefault();
+      const messageText = input.value.trim();
+      if (!messageText) return;
 
-            // Rola a página para baixo para vermos a nova mensagem
-            window.scrollTo(0, document.body.scrollHeight);
-        };
+      const userListItem = document.createElement('li');
+      userListItem.textContent = messageText;
+      userListItem.className = 'user-message';
+      messages.appendChild(userListItem);
 
-        // O que acontece quando o usuário envia uma mensagem
-        function sendMessage(event) {
-            event.preventDefault(); // Impede o recarregamento da página
-
-            const messageText = input.value;
-            if (messageText.trim() === "") return; // Não envia mensagens vazias
-
-            // 1. Cria e exibe a mensagem do usuário imediatamente
-            const userListItem = document.createElement('li');
-            userListItem.textContent = messageText;
-            userListItem.className = 'user-message';
-            messages.appendChild(userListItem);
-
-            // 2. Envia a mensagem do usuário para o backend via WebSocket
-            ws.send(messageText);
-
-            // 3. Reseta a "bolha" da IA. A próxima mensagem que chegar do servidor
-            //    iniciará uma nova "bolha".
-            currentAiMessageElement = null;
-
-            // 4. Limpa o campo de input
-            input.value = '';
-            window.scrollTo(0, document.body.scrollHeight);
-        }
-    </script>
+      ws.send(messageText);
+      currentAiMessageElement = null;
+      input.value = '';
+      messages.scrollTop = messages.scrollHeight;
+    }
+  </script>
 </body>
 </html>
