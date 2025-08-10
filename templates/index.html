@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Prosa.IA</title>
   <style>
     body {
@@ -46,6 +46,7 @@
       border-radius: 12px;
       line-height: 1.4;
       animation: fadeIn 0.3s ease-in-out;
+      white-space: pre-wrap; /* preserva quebras de linha no texto */
     }
 
     .user-message {
@@ -112,17 +113,49 @@
     const ws = new WebSocket(`ws://${window.location.host}/ws`);
     const messages = document.getElementById('messages');
     const input = document.getElementById('messageText');
+
     let currentAiMessageElement = null;
+    let typingIndicatorElement = null;
 
     ws.onmessage = function(event) {
-      if (!currentAiMessageElement) {
-        const aiListItem = document.createElement('li');
-        aiListItem.className = 'ai-message';
-        messages.appendChild(aiListItem);
-        currentAiMessageElement = aiListItem;
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'status') {
+          if (data.value === 'digitando') {
+            // Mostrar indicador "digitando..." se ainda não existe
+            if (!typingIndicatorElement) {
+              typingIndicatorElement = document.createElement('li');
+              typingIndicatorElement.textContent = 'Assistente está digitando...';
+              typingIndicatorElement.style.fontStyle = 'italic';
+              typingIndicatorElement.style.color = '#666';
+              messages.appendChild(typingIndicatorElement);
+              messages.scrollTop = messages.scrollHeight;
+            }
+          } else if (data.value === 'finalizado') {
+            // Remover indicador "digitando..."
+            if (typingIndicatorElement) {
+              typingIndicatorElement.remove();
+              typingIndicatorElement = null;
+            }
+            // Resetar referência para próxima mensagem do assistente
+            currentAiMessageElement = null;
+          }
+        } else if (data.type === 'texto') {
+          // Se ainda não existe o elemento da resposta do assistente, cria
+          if (!currentAiMessageElement) {
+            currentAiMessageElement = document.createElement('li');
+            currentAiMessageElement.className = 'ai-message';
+            currentAiMessageElement.textContent = '';
+            messages.appendChild(currentAiMessageElement);
+          }
+          // Adiciona o texto recebido (append)
+          currentAiMessageElement.textContent += data.value;
+          messages.scrollTop = messages.scrollHeight;
+        }
+      } catch (err) {
+        console.error('Erro ao processar mensagem do websocket:', err);
       }
-      currentAiMessageElement.innerHTML += event.data;
-      messages.scrollTop = messages.scrollHeight;
     };
 
     function sendMessage(event) {
@@ -136,7 +169,6 @@
       messages.appendChild(userListItem);
 
       ws.send(messageText);
-      currentAiMessageElement = null;
       input.value = '';
       messages.scrollTop = messages.scrollHeight;
     }

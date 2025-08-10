@@ -28,13 +28,18 @@ async def end_point_websocket(websocket: WebSocket):
         while True:
             content = await websocket.receive_text()
             conversation_history.append(f'usuario: {content}')
-            context  = '\n'.join(conversation_history)+'\nAssistente:'
+            await websocket.send_json({'type': 'status', 'value': 'digitando'})
+            context = '\n'.join(conversation_history) + '\nAssistente:'
             response_stream = model.generate_content(context, stream=True)
             response_model = ''
             for chunk in response_stream:
                 if chunk.text:
-                    await websocket.send_text(chunk.text)
                     response_model += chunk.text
+                    await websocket.send_json({
+                        'type': 'texto',
+                        'value': chunk.text,
+                    })
+            await websocket.send_json({'type': 'status', 'value': 'finalizado'})
             conversation_history.append(f'Assistente:{response_model}')
     except Exception as erro:
         print(f'erro no websocket: {erro}')
