@@ -4,6 +4,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.templating import Jinja2Templates
+from .prompt_engine import prompt_sotaque_nordeste
 
 load_dotenv()
 app = FastAPI()
@@ -30,7 +31,8 @@ async def end_point_websocket(websocket: WebSocket):
             conversation_history.append(f'usuario: {content}')
             await websocket.send_json({'type': 'status', 'value': 'digitando'})
             context = '\n'.join(conversation_history) + '\nAssistente:'
-            response_stream = model.generate_content(context, stream=True)
+            prompt = prompt_sotaque_nordeste(context)
+            response_stream = model.generate_content(prompt, stream=True)
             response_model = ''
             for chunk in response_stream:
                 if chunk.text:

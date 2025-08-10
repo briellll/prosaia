@@ -2,11 +2,17 @@
 
 Prosa.IA é um projeto de assistente conversacional baseado em IA, construído com FastAPI e Gemini (Google Generative AI). Ele permite conversas em tempo real via WebSocket, utilizando uma interface web simples.
 
+## Novidade: Sotaque Regional
+Agora o Prosa.IA responde usando sotaques regionais brasileiros! Por padrão, o assistente utiliza o sotaque nordestino, com expressões típicas como “oxe”, “ocê”, “num” e “vixe”, tornando a conversa mais natural e divertida. Também é possível adaptar para outros sotaques, como o paulista, deixando a experiência ainda mais personalizada.
+
+Essa funcionalidade foi implementada através de um mecanismo de prompt que insere o contexto e orienta o modelo a responder conforme o sotaque desejado.
+
 ## Funcionalidades
 - Interface web para conversação com IA
 - Backend FastAPI
 - Integração com Gemini (Google Generative AI)
 - Comunicação em tempo real via WebSocket
+- Respostas personalizadas com sotaque regional (nordestino e paulista)
 
 ## Pré-requisitos
 - Python 3.13+
@@ -48,7 +54,8 @@ prosaia/
 ├── src/
 │   └── prosaia/
 │       ├── main.py
-│       └── __init__.py
+│       ├── __init__.py
+│       └── prompt_engine.py  # Funções para personalizar o sotaque das respostas
 ├── templates/
 │   └── index.html
 ├── tests/
